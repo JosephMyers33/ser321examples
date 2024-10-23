@@ -42,24 +42,19 @@ task runAppAgain(type: JavaExec) {
 }
 
 // task that runs the Fraction Main which does not use arguments: gradle runFraction
-task runFraction(type: JavaExec) {
-  group 'Fraction Tasks'
-  description 'Tasks which runs Fraction with no arguments'
+task runFrac(type: JavaExec) {
+    group 'Fraction Tasks'
+    description 'Tasks which runs Fraction with optional arguments'
 
-  classpath = sourceSets.main.runtimeClasspath
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'Fraction'
 
-  main = 'Fraction'
+    // Default values if parameters are not provided
+    def num = project.hasProperty("num") ? project.getProperty('num') : 0
+    def denom = project.hasProperty("denom") ? project.getProperty('denom') : 1
+
+    args num, denom
 }
-
-// Try:
-// 1. Change Fraction.main so it accepts 2 arguments
-// 2. Create a new gradle tasks that accepts two arguments and 
-//    can be called as: gradle runFrac -Pdenom=4 -Pnum=3 or as gradle runFrac -Pnum=3 -Pdenom=4 , also make sure it can run with only 1 or no arguments
-
-// Example how you can add that libraries can be pulled from mavenCentral()
-// repositories {
-//   mavenCentral()
-// }
 
 // Setting dependencies, e.g. when you import JSON in your Java files
 // dependencies{
