@@ -25,6 +25,8 @@ import java.util.Random;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
+import java.util.Scanner;
+
 
 class WebServer {
   public static void main(String args[]) {
@@ -61,7 +63,7 @@ class WebServer {
         try {
           server.close();
         } catch (IOException e) {
-          System.err.println("An I/O error occurred: " + e.getMessage());
+          // TODO Auto-generated catch block
           e.printStackTrace();
         }
       }
@@ -193,42 +195,6 @@ class WebServer {
             builder.append("\n");
             builder.append("File not found: " + file);
           }
-        } else if (request.contains("currency?")) {
-            Map<String, String> query_pairs = splitQuery(request.replace("currency?", ""));
-
-            String fromCurrency = query_pairs.get("from");
-            String toCurrency = query_pairs.get("to");
-            String amountStr = query_pairs.get("amount");
-
-            try {
-                double amount = Double.parseDouble(amountStr);
-
-                // Fetch exchange rates from an API (e.g., Fixer.io)
-                // ... (replace with your API integration logic)
-
-                double exchangeRate = getExchangeRate(fromCurrency, toCurrency);
-                double convertedAmount = amount * exchangeRate;
-
-                builder.append("HTTP/1.1 200 OK\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("Converted   
-         amount: " + convertedAmount + " " + toCurrency);
-            } catch (NumberFormatException e) {
-                // Handle invalid amount
-                builder.append("HTTP/1.1 400 Bad Request\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("Invalid   
-         amount: Please provide a valid number.");
-            } catch (IOException e) {
-                // Handle API errors or network issues
-                builder.append("HTTP/1.1 500 Internal Server Error\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("Error   
-         fetching exchange rates: " + e.getMessage());
-            }
         } else if (request.contains("multiply?")) {
           // This multiplies two numbers, there is NO error handling, so when
           // wrong data is given this just crashes
@@ -237,115 +203,91 @@ class WebServer {
           // extract path parameters
           query_pairs = splitQuery(request.replace("multiply?", ""));
 
-          try {
-              Integer num1 = Integer.parseInt(query_pairs.get("num1"));
-              Integer num2 = Integer.parseInt(query_pairs.get("num2"));
+          // extract required fields from parameters
+          Integer num1 = Integer.parseInt(query_pairs.get("num1"));
+          Integer num2 = Integer.parseInt(query_pairs.get("num2"));
+          // do math
+          Integer result = num1 * num2;
 
-              Integer result = num1 * num2;
+          // Generate response
+          builder.append("HTTP/1.1 200 OK\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("Result is: " + result);
 
-              builder.append("HTTP/1.1 200 OK\n");
-              builder.append("Content-Type: text/html; charset=utf-8\n");
-              builder.append("\n");
-              builder.append("Result   
-       is: " + result);
-          } catch (NumberFormatException e) {
-              builder.append("HTTP/1.1 400 Bad Request\n");
-              builder.append("Content-Type: text/html; charset=utf-8\n");   
+          // TODO: Include error handling here with a correct error code and
+          // a response that makes sense
 
-              builder.append("\n");
-              builder.append("Invalid   
-       input: Please provide two integers.");
-          }
+        } else if (request.contains("palindrome?")) {
+        Map<String, String> query_pairs = splitQuery(request.replace("palindrome?", ""));
+        String word = query_pairs.get("word");
 
-        } else if (request.contains("github?")) {
-            Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-            query_pairs = splitQuery(request.replace("github?", ""));
-            String query = query_pairs.get("query");
+        boolean isPalindrome = isPalindrome(word);
+        builder.append("HTTP/1.1 200 OK\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append(word + " is " + (isPalindrome ? "" : "not ") + "a palindrome.");
+    } else if (request.contains("multiplicity?")) {
+        Map<String, String> query_pairs = splitQuery(request.replace("multiplicity?", ""));
+        String numberStr = query_pairs.get("number");
 
-            try {
-                // Make the GitHub API request
-                String json = fetchURL("https://api.github.com/" + query);
+        try {
+            int number = Integer.parseInt(numberStr);
+            Map<Integer, Integer> multiplicities = calculateMultiplicities(number);
 
-                // Parse the JSON response
-                ObjectMapper mapper = new ObjectMapper();
-                GitHubResponse[] repos = mapper.readValue(json, GitHubResponse[].class);
-
-                // Format the response
-                builder.append("HTTP/1.1 200 OK\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("<ul>");   
-
-                for (GitHubResponse repo : repos) {
-                    builder.append("<li>");
-                    builder.append("Full Name: ").append(repo.getFullName()).append("<br>");
-                    builder.append("ID: ").append(repo.getId()).append("<br>");
-                    builder.append("Owner: ").append(repo.getOwner().getLogin()).append("<br>");
-                    builder.append("</li>");
-                }
-                builder.append("</ul>");
-            } catch (IOException e) {
-                // Handle general IO exceptions, including network errors and parsing errors
-                builder.append("HTTP/1.1 500 Internal Server Error\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("An   
-         error occurred while processing your request: " + e.getMessage());
-            } catch (JsonProcessingException e) {
-                // Handle specific JSON parsing errors
-                builder.append("HTTP/1.1 400 Bad Request\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("Invalid   
-         GitHub API query: " + e.getMessage());
+            builder.append("HTTP/1.1 200 OK\n");
+            builder.append("Content-Type: text/html; charset=utf-8\n");
+            builder.append("\n");
+            for (Map.Entry<Integer, Integer> entry : multiplicities.entrySet()) {
+                builder.append(entry.getKey() + "^" + entry.getValue() + "<br>");
             }
-        } else if (request.contains("weather?")) {
-            // Weather Information
-            Map<String, String> query_pairs = splitQuery(request.replace("weather?", ""));
-
-            String city = query_pairs.get("city");
-            String country = query_pairs.get("country");
-
-            try {
-                // Fetch weather data from an API (e.g., OpenWeatherMap)
-                // ... (replace with your API integration logic)
-
-                WeatherData weatherData = getWeatherData(city, country);
-
-                builder.append("HTTP/1.1 200 OK\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("Weather   
-in " + city + ", " + country + ":\n");
-                builder.append("Temperature: " + weatherData.getTemperature() + "°C\n");
-                builder.append("Humidity: " + weatherData.getHumidity() + "%\n");
-                builder.append("Wind Speed: " + weatherData.getWindSpeed() + " m/s\n");
-            } catch (IOException e) {
-                // Handle API errors or network issues
-                builder.append("HTTP/1.1 500 Internal Server Error\n");
-                builder.append("Content-Type: text/html; charset=utf-8\n");
-                builder.append("\n");
-                builder.append("Error   
-fetching weather data: " + e.getMessage());
-            }
-        } else {
-            // If the request is not recognized at all
+        } catch (NumberFormatException e) {
+            // Handle invalid input
             builder.append("HTTP/1.1 400 Bad Request\n");
             builder.append("Content-Type: text/html; charset=utf-8\n");
             builder.append("\n");
-            builder.append("I am not sure what you want me to do...");
+            builder.append("Invalid input: Please provide a valid integer.");
+        }
+    } else if (request.contains("github?")) {
+          // pulls the query from the request and runs it with GitHub's REST API
+          // check out https://docs.github.com/rest/reference/
+          //
+          // HINT: REST is organized by nesting topics. Figure out the biggest one first,
+          //     then drill down to what you care about
+          // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
+          //     "/repos/OWNERNAME/REPONAME/contributors"
+
+          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+          query_pairs = splitQuery(request.replace("github?", ""));
+          String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+          System.out.println(json);
+
+          builder.append("HTTP/1.1 200 OK\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("Check the todos mentioned in the Java source file");
+          // TODO: Parse the JSON returned by your fetch and create an appropriate
+          // response based on what the assignment document asks for
+
+        } else {
+          // if the request is not recognized at all
+
+          builder.append("HTTP/1.1 400 Bad Request\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("I am not sure what you want me to do...");
         }
 
         // Output
         response = builder.toString().getBytes();
+      }
     } catch (IOException e) {
-        e.printStackTrace();
-        response = ("<html>ERROR: " + e.getMessage() + "</html>").getBytes();
+      e.printStackTrace();
+      response = ("<html>ERROR: " + e.getMessage() + "</html>").getBytes();
     }
 
-    return response;   
-
-}
+    return response;
+  }
 
   /**
    * Method to read in a query and split it up correctly
@@ -413,6 +355,39 @@ fetching weather data: " + e.getMessage());
 
     return result;
   }
+
+public static boolean isPalindrome(String word) {
+        int left = 0;
+        int right = word.length() - 1;
+
+        while (left < right) {
+            if (word.charAt(left) != word.charAt(right)) {
+                return false;
+            }
+            left++;
+            right--;
+        }
+
+        return true;
+}
+public static Map<Integer, Integer> calculateMultiplicities(int number) {
+    Map<Integer, Integer> multiplicities = new HashMap<>();
+
+    for (int i = 2; i <= number; i++) {
+        int count = 0;
+        while (number % i == 0) {
+            number /= i;
+            count++;
+        }
+        if (count > 0) {
+            multiplicities.put(i, count);
+        }
+    }
+
+    return multiplicities;
+}
+
+
 
   /**
    *
