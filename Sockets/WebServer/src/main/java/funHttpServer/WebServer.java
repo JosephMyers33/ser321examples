@@ -196,29 +196,42 @@ class WebServer {
             builder.append("File not found: " + file);
           }
         } else if (request.contains("multiply?")) {
-          // This multiplies two numbers, there is NO error handling, so when
-          // wrong data is given this just crashes
+    Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+    query_pairs = splitQuery(request.replace("multiply?", ""));
 
-          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-          // extract path parameters
-          query_pairs = splitQuery(request.replace("multiply?", ""));
+    try {
+        // Extract and parse numbers
+        Integer num1 = Integer.parseInt(query_pairs.get("num1"));
+        Integer num2 = Integer.parseInt(query_pairs.get("num2"));
 
-          // extract required fields from parameters
-          Integer num1 = Integer.parseInt(query_pairs.get("num1"));
-          Integer num2 = Integer.parseInt(query_pairs.get("num2"));
-          // do math
-          Integer result = num1 * num2;
+        // Perform multiplication
+        Integer result = num1 * num2;
 
-          // Generate response
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Result is: " + result);
-
-          // TODO: Include error handling here with a correct error code and
-          // a response that makes sense
-
-        } else if (request.contains("palindrome?")) {
+        // Generate success response
+        builder.append("HTTP/1.1 200 OK\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Result is: " + result);
+    } catch (NumberFormatException e) {
+        // Handle invalid number format
+        builder.append("HTTP/1.1 400 Bad Request\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Invalid input. Please provide valid integer numbers for num1 and num2.");
+    } catch (NullPointerException e) {
+        // Handle missing parameters
+        builder.append("HTTP/1.1 400 Bad Request\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Missing parameters. Please provide both num1 and num2.");
+    } catch (Exception e) {
+        // Handle unexpected errors
+        builder.append("HTTP/1.1 500 Internal Server Error\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("An unexpected error occurred. Please try again later.");
+    }
+} else if (request.contains("palindrome?")) {
         Map<String, String> query_pairs = splitQuery(request.replace("palindrome?", ""));
         String word = query_pairs.get("word");
 
@@ -236,7 +249,7 @@ class WebServer {
             Map<Integer, Integer> multiplicities = calculateMultiplicities(number);
 
             builder.append("HTTP/1.1 200 OK\n");
-            builder.append("Content-Type: text/html; charset=utf-8\n");
+            builder.append("Content-Type: text/html; charset=utf- \n");
             builder.append("\n");
             for (Map.Entry<Integer, Integer> entry : multiplicities.entrySet()) {
                 builder.append(entry.getKey() + "^" + entry.getValue() + "<br>");
@@ -249,27 +262,37 @@ class WebServer {
             builder.append("Invalid input: Please provide a valid integer.");
         }
     } else if (request.contains("github?")) {
-          // pulls the query from the request and runs it with GitHub's REST API
-          // check out https://docs.github.com/rest/reference/
-          //
-          // HINT: REST is organized by nesting topics. Figure out the biggest one first,
-          //     then drill down to what you care about
-          // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
-          //     "/repos/OWNERNAME/REPONAME/contributors"
+    Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+    query_pairs = splitQuery(request.replace("github?", ""));
+    String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
 
-          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-          query_pairs = splitQuery(request.replace("github?", ""));
-          String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-          System.out.println(json);
+    // Manual JSON parsing
+    String[] lines = json.split("\n");
+    StringBuilder responseBody = new StringBuilder();
 
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Check the todos mentioned in the Java source file");
-          // TODO: Parse the JSON returned by your fetch and create an appropriate
-          // response based on what the assignment document asks for
+    boolean inContributors = false;
+    for (String line : lines) {
+        if (line.contains("\"contributors\":")) {
+            inContributors = true;
+        } else if (inContributors && line.contains("\"login\":")) {
+            String login = line.substring(line.indexOf("\"login\":") + 10, line.indexOf("\"", line.indexOf("\"login\":") + 10));
+            responseBody.append("- ").append(login).append("\n");
+        } else if (inContributors && line.contains("]")) {
+            inContributors = false;
+            break;
+        }
+    }
 
-        } else {
+    if (responseBody.length() == 0) {
+        responseBody.append("No contributors found for the requested repository.");
+    }
+
+    builder.append("HTTP/1.1 200 OK\n");
+    builder.append("Content-Type: text/html; charset=utf-8\n");
+    builder.append("\n");
+    builder.append(responseBody.toString());
+
+}else {
           // if the request is not recognized at all
 
           builder.append("HTTP/1.1 400 Bad Request\n");
