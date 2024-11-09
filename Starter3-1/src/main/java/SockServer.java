@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 import java.net.*;
 import java.io.*;
+import java.util.HashMap;
 
 /**
  * A class to demonstrate a simple client-server connection using sockets.
