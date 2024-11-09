@@ -13,6 +13,7 @@ public class SockServer {
   static Socket sock;
   static DataOutputStream os;
   static ObjectInputStream in;
+  private static HashMap<String, Integer> inventory = new HashMap<>();
 
   static int port = 8888;
 
