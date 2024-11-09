@@ -182,26 +182,32 @@ public class SockServer {
           int quantity = req.getInt("quantity");
           inventory.put(product, inventory.getOrDefault(product, 0) + quantity);
           res.put("ok", true);
+          res.put("type", "inventory");
           res.put("inventory", inventoryToJsonArray());
       } else if ("view".equals(task)) {
           res.put("ok", true);
+          res.put("type", "inventory");
           res.put("inventory", inventoryToJsonArray());
       } else if ("buy".equals(task)) {
           String product = req.getString("productName");
           int quantity = req.getInt("quantity");
           if (!inventory.containsKey(product)) {
               res.put("ok", false);
+              res.put("type", "inventory");
               res.put("message", "Product " + product + " not in inventory");
           } else if (inventory.get(product) < quantity) {
               res.put("ok", false);
+              res.put("type", "inventory");
               res.put("message", "Product " + product + " not available in quantity " + quantity);
           } else {
               inventory.put(product, inventory.get(product) - quantity);
               res.put("ok", true);
+              res.put("type", "inventory");
               res.put("inventory", inventoryToJsonArray());
           }
       } else {
           res.put("ok", false);
+          res.put("type", "inventory");
           res.put("message", "Invalid task");
       }
 
@@ -218,6 +224,7 @@ public class SockServer {
               count++;
           }
           res.put("ok", true);
+          res.put("type", "charCount");
           res.put("result", count);
       }
       return res;
