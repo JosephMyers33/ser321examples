@@ -161,14 +161,59 @@ public class SockServer {
     return res;
   }
 
-  // implement me in assignment 3
   static JSONObject inventory(JSONObject req) {
-    return new JSONObject();
+      System.out.println("Inventory request: " + req.toString());
+      JSONObject res = testField(req, "task");
+      if (!res.getBoolean("ok")) {
+          return res;
+      }
+
+      String task = req.getString("task");
+
+      if ("add".equals(task)) {
+          String product = req.getString("productName");
+          int quantity = req.getInt("quantity");
+          inventory.put(product, inventory.getOrDefault(product, 0) + quantity);
+          res.put("ok", true);
+          res.put("inventory", inventoryToJsonArray());
+      } else if ("view".equals(task)) {
+          res.put("ok", true);
+          res.put("inventory", inventoryToJsonArray());
+      } else if ("buy".equals(task)) {
+          String product = req.getString("productName");
+          int quantity = req.getInt("quantity");
+          if (!inventory.containsKey(product)) {
+              res.put("ok", false);
+              res.put("message", "Product " + product + " not in inventory");
+          } else if (inventory.get(product) < quantity) {
+              res.put("ok", false);
+              res.put("message", "Product " + product + " not available in quantity " + quantity);
+          } else {
+              inventory.put(product, inventory.get(product) - quantity);
+              res.put("ok", true);
+              res.put("inventory", inventoryToJsonArray());
+          }
+      } else {
+          res.put("ok", false);
+          res.put("message", "Invalid task");
+      }
+
+      return res;
   }
 
-  // implement me in assignment 3
   static JSONObject charCount(JSONObject req) {
-    return new JSONObject();
+      System.out.println("Char Count: " + req.toString());
+      JSONObject res = testField(req, "string");
+      if (res.getBoolean("ok")) {
+          String str = req.getString("string");
+          int count = 0;
+          for (char c : str.toCharArray()) {
+              count++;
+          }
+          res.put("ok", true);
+          res.put("result", count);
+      }
+      return res;
   }
 
   // handles the simple addmany request
@@ -251,5 +296,26 @@ public class SockServer {
 
     } catch(Exception e) {e.printStackTrace();}
 
+  }
+  
+  private static int countOccurreneces(String str, char find) {
+	  int count = 0;
+	  for (char c: str.toCharArray()) {
+		  if (c == find) {
+			  count++
+		  }
+	  }
+	  return count;
+  }
+  
+  private static JSONArray inventoryToJsonArray() {
+      JSONArray array = new JSONArray();
+      for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+          JSONObject obj = new JSONObject();
+          obj.put("product", entry.getKey());
+          obj.put("quantity", entry.getValue());
+          array.put(obj);
+      }
+      return array;
   }
 }
