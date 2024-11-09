@@ -302,7 +302,7 @@ public class SockServer {
 	  int count = 0;
 	  for (char c: str.toCharArray()) {
 		  if (c == find) {
-			  count++
+			  count++;
 		  }
 	  }
 	  return count;
