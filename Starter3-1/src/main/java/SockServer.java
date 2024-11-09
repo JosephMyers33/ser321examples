@@ -92,9 +92,9 @@ public class SockServer {
           } else if (req.getString("type").equals("addmany")) {
             res = addmany(req);
           } else if (req.getString("type").equals("charCount")){
-        	  res = charCount(req) 
+        	  res = charCount(req);
           } else if (req.getString("type").equals("inventory")){
-        	  res = charCount(req) 
+        	  res = charCount(req); 
           } else {
             res = wrongType(req);
           }
